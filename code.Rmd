@@ -1,0 +1,435 @@
+---
+title: "College tuition, diversity and pay - Final Project"
+authors: "Ariel Hedvat 323842914 and Nicole Shklover 322605601"
+date: '2022-06-10'
+output:
+  prettydoc::html_pretty: 
+    theme: hpstr
+    highlight: github
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+# Introduction
+
+## Background and Goals
+
+Our project is based on College tuition data. 
+
+link to the data: https://github.com/rfordatascience/tidytuesday/blob/master/data/2020/2020-03-10/readme.md .
+
+This data comes from many different sources but originally came from the US Department of Education.
+
+We found it most relevant, to use the tables with information about tuition cost, diversity in schools and estimated salaries.
+
+We are interested in understanding how the group to which the student belongs, may affect characteristics in the academic world, such as: school tuition, salaries in the future, STEM students percentage and more.
+
+We can see that unfortunately even now days your race, sex and nationality has an influence on your school tuition and future salary.
+
+In this project we will conduct some tests and show connections among some variables from the data we extracted from the tables we chose.
+
+Our main goal is to find meaningful connections between the characteristics in the academic. 
+
+# Methods
+
+## Libraries
+Here are all the libraries we are using in our project: 
+
+```{r libraries}
+library(tidyverse)
+library(ggplot2)
+library(scales)
+library(cowplot)
+library(ggcorrplot)
+```
+
+## Importing Data
+We are importing the data set tables from "tidytuesday" (github).
+
+The tables are:
+
+1) Tuition cost - tuition and fees by college/university, along with school type, degree length, state, in-state vs out-of-state.
+
+2) Salary potential - information about estimated salaries.
+
+3) diversity school - diversity by college/university.
+
+This data is already tidy.
+
+```{r reading the tuition cost data}
+tuition_cost <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-03-10/tuition_cost.csv')
+
+glimpse (tuition_cost)
+```
+
+```{r reading the salary potential data}
+salary_potential <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-03-10/salary_potential.csv')
+
+glimpse (salary_potential)
+```
+
+```{r reading the diversity school data}
+diversity_school <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-03-10/diversity_school.csv')
+
+glimpse (diversity_school)
+```
+
+## Understanding The Data by Transforming Variables & Visualization & Modelling
+
+### T-test
+#### Our Research Question:
+
+Is out of state tuition higher than in state tuition?
+
+* The sample contains tuition information from universities in the USD.
+
+Details:
+
+* H0: Null hypothesis: There's no difference between the mean of out of state tuition and the mean of in state tuition of universities in the USD.
+
+* H1: Alternative hypothesis: The mean of out of state tuition is greater than the mean of in state tuition of universities in the USD.
+
+* In our assumption test we will use a 95% confidence level (alpha = 5%).
+
+* If P value is less than 5% we will reject the null hypothesis (H0).
+
+Assumptions:
+
+* We assume normality because of the large size of the sample (data).
+
+* We are using T test because the variances are unknown.
+
+
+Here we made some tables, that will help us when we do our hypotheses test and visualizations.
+
+```{r T test - table}
+in_school <- tuition_cost %>%
+  select(name, in_state_tuition) %>%
+  rename(tuition = in_state_tuition)
+
+out_of_school <- tuition_cost %>%
+  select(name, out_of_state_tuition)%>%
+  rename(tuition = out_of_state_tuition)
+
+in_and_out_school <- bind_rows(list (In = in_school, Out = out_of_school), .id="Citizen")
+```
+
+These plots show us the tuition of students with citizenship and without citizenship among the USD schools, while every column represents the amount of schools that charge the specific tuition.
+
+```{r histogram tuition for each school per citizenship}
+seperate <- ggplot(in_and_out_school, aes(x = tuition)) +
+  geom_histogram(bins=30) + 
+  facet_wrap(~Citizen, ncol=1) 
+
+combine <- ggplot(in_and_out_school, aes(x=tuition, fill=Citizen)) +
+  geom_histogram(color='#e9ecef', alpha=0.5, position='identity', bins=30)
+
+cowplot::plot_grid(seperate, combine)
+```
+
+Note: our sample is paired because the tuitions are from the same schools.
+
+Results:
+
+* The P value (p-value < 2.2e-16) is smaller than alpha (0.05), therefore we reject our null hypothesis (H0).
+
+* We observe from the test that non citizens students are 95% likely to pay around 3,875$ (minimum) more than citizens students in USD universities.
+
+```{r t test}
+t.test(out_of_school$tuition,in_school$tuition,var.equal = F,conf.level = 0.95,mu = 0 ,paired = T,alternative = "greater")
+```
+
+Here we can see a difference in the median tuitions between the citizens and non citizens more clearly with the boxplot visualization.
+
+If you'll look at the black line in the boxes, which represents the median tuitions, you can see that the median tuition for citizens is lower than for non citizens.
+
+This shows us that half of the tuitions for citizens are lower than half of the tuitions for non citizens, a fact that can indicate on the difference between the tuitions of the two.
+
+
+```{r boxplot visulazition of t test}
+boxplot (in_and_out_school$tuition ~ in_and_out_school$Citizen, ylab = "Tuition", xlab = "Citizen in or out of state")
+
+```
+
+
+### Mulitple Linear Regression
+#### Our Research Question:
+
+Does the percent of variety groups of: women, white, non resident foreign and black in every university, has a linear impact on the estimated mid career salary?
+
+Details:
+
+* H0: Null hypothesis: beta1 = beta2 = beta3 = beta4 = 0.
+
+* H1: Alternative hypothesis: at least one of the betas (beta1, beta2, beta3, beta4) isn't 0.
+
+* In our assumption we will use a 95% confidence level to test it (alpha = 5%).
+
+* If P value is less than 5% we will reject the null hypothesis (H0). 
+
+* If we reject H0 we can say that the relationship we found is statistically significant.
+
+Assumptions:
+
+* The errors are normally distributed.
+
+* The errors are homoscedastic (the error distribution is the same).
+
+
+Note: we decided to do a log10 transformation on the salary data because of the large numbers of the salary.
+
+
+This plot shows the distribution of the dependent variable (mid career pay).
+We can assume that it won't distribute normally hence the look of the graph.
+
+```{r Modeling Linear Regression}
+salary_potential %>% 
+filter(!is.na(mid_career_pay))%>%
+  ggplot(aes(log10(mid_career_pay)))  +
+  geom_density() 
+```
+
+note:
+our dependent variable (estimated mid career salary per university) does not distribute normally, which means that its variance wont as well. this is a problem because it means the assumptions we make about the regression model aren't true.
+Adi told us though, to continue with the model and ignore this :)
+
+
+Here we made some tables with data about the groups, that will help us when we do our hypotheses test and visualizations.
+
+
+```{r Mulitple Linear Regression - table}
+diversity_salary <- diversity_school %>% 
+    left_join(salary_potential, by = "name") %>%
+    mutate(category_percent = (enrollment / total_enrollment))
+
+diversity_salary <- select(diversity_salary, name, category, mid_career_pay, category_percent) %>% 
+  na.omit(cols="mid_career_pay")
+
+diversity_salary <- diversity_salary[grepl("Women|White|Non-Resident Foreign|Black", diversity_salary$category),]
+
+Women <- filter(diversity_salary, category == "Women")%>%
+  select(name, mid_career_pay, category_percent)%>%
+  rename(Women_percent = category_percent)
+
+White <- filter(diversity_salary, category == "White")%>%
+  select(name, mid_career_pay, category_percent)%>%
+  rename(White_percent = category_percent)
+	
+Non_Resident_Foreign <- filter(diversity_salary, category == "Non-Resident Foreign")%>%
+  select(name, mid_career_pay, category_percent)%>%
+  rename(Non_Resident_Foreign_percent = category_percent)
+
+Black <- filter(diversity_salary, category == "Black")%>%
+  select(name, mid_career_pay, category_percent)%>%
+  rename(Black_percent = category_percent)
+
+diversity_groups <- left_join(Women, White, by = c("name", "mid_career_pay")) %>% 
+  left_join(., Non_Resident_Foreign, by = c("name", "mid_career_pay"))%>%
+  left_join(., Black, x.by='name', by = c("name", "mid_career_pay"))
+  
+```
+
+
+In these plots we can see the Relationship between group/racial/gender category and mid career salary potential.
+
+We can see that the errors are not homoscedastic. Regardless, we will continue with our model as Adi instructed.
+
+
+```{r visualisation Linear Regression plots}
+ggplot(diversity_salary, aes(x = category_percent, y = log10(mid_career_pay))) +
+    geom_point() +
+    stat_smooth(method = "lm") +
+    facet_wrap(~category) + 
+    scale_x_continuous(labels = scales::percent) +
+    labs(x = "group/racial/gender category representation",
+         y = "log10(mid career pay)",
+         title = "Relationship between group/racial/gender category and mid career salary potential") + theme(text = element_text(size=10))
+
+```
+
+
+Here we check the correlation between the independent variables, to find association rules between the variables.
+
+We can see that most of the correlations are pretty weak, except the one between the percent of black group and the percent of white group which is a quite large negative correlation (-0.7).
+
+This makes sense since the history between white and black people in the USD.
+
+```{r correlation between diversity groups we chose}
+groups <- diversity_groups %>% select(Women_percent, White_percent, Non_Resident_Foreign_percent, Black_percent)
+
+groups_corr <- cor(groups)
+ggcorrplot::ggcorrplot(groups_corr, lab = T,
+           colors = c("lightskyblue","white","pink"))
+  
+```
+
+
+From the model summary, we can see that our adjusted R-squared is 0.3826, which is considered a bit low. This tells us that our model doesn't describe the connection very well.
+
+Although, because the P value (p-value: < 2.2e-16) is lower than alpha (5%), we reject our null hypothesis (H0).
+
+This means we can see that there is a sort of connection between the dependent variable (y = log10(mid career pay)) and the independent variables (x1 = Women percent, x2 = White percent, x3 = Black percent , x4 = Non Resident Foreign percent).
+
+*beta 0 = 5.14421
+
+* y ~ x1: there is a negative impact of women percent out of all students, on the estimated mid career pay, in the universities. 
+
+* y ~ x2: there is a negative impact of white percent out of all students, on the estimated mid career pay, in the universities.
+
+(This result is very surprising to us, because of the stigma that the white society has an advantage over others and therefore we expected to see a positive impact, but our test says the opposite).
+
+* y ~ x3: there is a negative impact of black percent out of all students, on the estimated mid career pay, in the universities. 
+
+* y ~ x4: there is a positive impact of non resident foreign percent out of all students, on the estimated mid career pay, in the universities. 
+
+(We thought about a reasonable explanation for this result, and came to the conclusion, that maybe non resident foreign students that come especially for the specific school, make more efforts to move to another country, therefore they try harder in school and in their future jobs).
+
+```{r Modeling lm}
+career_vs_diversity_lm = lm(formula = log10(mid_career_pay) ~ Women_percent + White_percent + Black_percent + Non_Resident_Foreign_percent, data = diversity_groups)
+  summary(career_vs_diversity_lm)
+```
+
+### Chi-squared Test
+#### Our Research Question:
+
+we want to check if the percent of stem students is normally distributed using chi-squared test while using visualization.
+
+We wanted to do this test for the linear regression model later in the project. 
+
+Details:
+
+* H0: Null hypothesis: STEM percent is normally distributed.
+
+* H1: Alternative hypothesis: STEM percent isn't normally distributed.
+
+* In our assumption we will use a 95% confidence level to test it (alpha = 5%).
+
+* If P value is less than  alpha (5%) we will reject the null hypothesis (H0).
+
+
+Density plot of STEM percent in universities of USD:
+
+We can expect, based on the plot, that the STEM percent won't distribute normally.
+
+```{r Modeling Chi-squared}
+stem <- select(salary_potential, stem_percent) %>% 
+  filter(!is.na(stem_percent))
+
+stem_density <- ggplot(stem, aes(stem_percent)) +
+  geom_density()
+
+stem_density
+
+```
+
+With the help of this plot (qqplot), we can see the that the dots do not align with the straight line, and therefore the STEM percent doesn't distribute normally.
+
+```{r qqplot Chi-squared}
+mu <- mean(stem$stem_percent)
+sigma <- sd(stem$stem_percent)
+
+ggplot(stem, aes(sample = stem_percent)) +
+  geom_qq(distribution = stats::qnorm, dparams = list(mean = mu, sd = sigma)) + 
+  geom_abline()
+```
+
+From the results of the test, we can clearly see that STEM percent is not normally distributed because P value is lower than alpha (p-value < 2.2e-16 < 0.05).
+```{r Chi-squared Test}
+chi_make <- chisq.test(stem$stem_percent)
+chi_make
+
+```
+
+### Linear Regression
+#### Our Research Question:
+
+Does the percentage of women enrolled to university have a linear effect on the percentage of students studying STEM at the same university?
+
+Details:
+
+* H0: Null hypothesis: beta1 = 0.
+
+* H1: Alternative hypothesis: beta1 isn't 0.
+
+* In our assumption we will use a 95% confidence level to test it (alpha = 5%).
+
+* If P value is less than 5% we will reject the null hypothesis (H0). 
+
+* If we reject H0 we can say that the relationship we found is statistically significant.
+
+Assumptions:
+
+* The errors are normally distributed.
+
+* The errors are homoscedastic (the error distribution is the same).
+
+
+note:
+We discovered from the chi squared test, that our dependent variable (STEM percentage) does not distribute normally, which means that its variance wont as well. this is a problem because it means the assumptions we make about the regression model aren't true.
+Adi told us though, to continue with the model and ignore this :)
+
+
+We made a table that combines the information about percentage of women and STEM percentage in universities.
+
+```{r Linear Regression - table}
+Women <- filter(diversity_salary, category == "Women")%>%
+  select(name, mid_career_pay, category_percent)%>%
+  rename(Women_percent = category_percent)
+
+stem_vs_women <- left_join(Women, salary_potential, by = "name")
+stem_vs_women <- select(stem_vs_women, name, Women_percent, stem_percent)%>%
+  mutate(stem_percent = stem_percent / 100) %>% 
+  filter(!is.na(Women_percent))%>% 
+  filter(!is.na(stem_percent))
+
+```
+
+
+We can see that the errors are not homoscedastic. Regardless, we will continue with our model as Adi instructed.
+
+```{r visualiztion of Linear Regression}
+stem_vs_women_points <- ggplot(stem_vs_women, aes(x= Women_percent, y= stem_percent)) +
+  geom_point() +
+  scale_x_continuous(labels = scales::percent) + 
+  scale_y_continuous(labels = scales::percent) + 
+  stat_smooth(method = "lm") 
+
+stem_vs_women_points
+``` 
+
+Results:
+
+From the model summary, we can see that our  R-squared is 0.3826 , which is considered a bit low (because its far from 1). This tells us that our model doesn't describe the connection very well.
+
+Although, because the P value (p-value: < 2.2e-16) is lower than alpha (5%), we reject our null hypothesis (H0).
+
+This means we can see that there is a sort of connection between the dependent variable (y = STEM percentage) and the independent variable (x = Women percentage).
+
+We found that there's a significant negative connection between the variables.
+This result is not surprising to us, but its still hard for us to accept this reality since we are also women studying STEM. 
+
+We hope that in the future there will be a change in this matter as the world progresses.
+
+
+```{r Modeling the Linear Regression}
+stem_vs_women_lm <- lm(formula = stem_percent ~ Women_percent, data = stem_vs_women)
+summary(stem_vs_women_lm)
+```
+# Conclusion
+
+During the project we learned to use R tools and use hypothesis tests we learned in class.
+
+Our data selection was interesting, and indeed we were able to discover interesting findings, such as:
+
+1) The average tuition fee for non-citizen students is higher than for citizens.
+
+2) We found that there is a connection between the diversity groups of students in universities, and the estimated future salary of the university alumni.
+
+3) When the percentage of women in a university is higher, the percentage of students in STEM is lower.
+
+
+
+
+
+
