@@ -8,7 +8,7 @@
 
 This project was the final assignment for a Statistics and Data Analysis with R course at Tel Aviv University. It involved various phases of a data analysis project, including data importing, data tidying, understanding the data, visualizing data using ggplot2, modeling with tools such as hypothesis testing and regression, and communicating findings through a written report.
 
-## Project Goal
+## The Project's Goal
 
 Our project focused on college tuition data, and we aimed to explore how a student's demographic background might influence various academic characteristics, including school tuition, future salaries, the percentage of STEM students, and more. Our primary goal was to uncover meaningful connections within the academic world.
 
