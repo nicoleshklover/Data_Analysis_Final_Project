@@ -17,5 +17,6 @@ Our project focused on college tuition data, and we aimed to explore how a stude
 You can access the dataset we used via the following link: [College Tuition Dataset](https://github.com/rfordatascience/tidytuesday/blob/master/data/2020/2020-03-10/readme.md).
 
 ## Outcome
+
 We found that unfortunately even now days race, sex and nationality has an influence on school tuition and future salary. <br>
 We received a grade of 93 for our project. The entire project was implemented using the R programming language within R Studio.
