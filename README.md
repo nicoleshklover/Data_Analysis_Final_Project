@@ -21,5 +21,5 @@ link to the data: https://github.com/rfordatascience/tidytuesday/blob/master/dat
 We were interested in understanding how the group to which the student belongs, may affect characteristics in the academic world, such as: school tuition, salaries in the future, STEM students percentage and more.
 Our main goal was to find meaningful connections between the characteristics in the academic.
 
-We recieved a grade of 93 on the project.
+We recieved a grade of 93 on the project.<br>
 The project's code is implemented using R language (in R studio).<br><br>
