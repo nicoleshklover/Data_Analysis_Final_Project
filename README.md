@@ -4,7 +4,7 @@
 
 This was the final project for a Statistics and Data Analysis with R course at Tel Aviv University. <br><br>
 
-In this project we handeled the different phases of a data analysis project: <br>
+In this project we handeled the different phases of a data analysis project:
 1. Data Import (reading the data into R).
 2. Data Tidying (arranging the data into something we can work with)
 3. Understanding the data: <br>
