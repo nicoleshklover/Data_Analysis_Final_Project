@@ -19,4 +19,4 @@ You can access the dataset we used via the following link: [College Tuition Data
 ## Outcome
 
 We found that unfortunately even now days race, sex and nationality has an influence on school tuition and future salary. <br>
-We received a grade of 93 for our project. The entire project was implemented using the R programming language within R Studio.
+We received a grade of 93 for our project. The entire project was implemented using R programming language within R Studio.
