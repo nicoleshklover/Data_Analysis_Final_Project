@@ -4,9 +4,9 @@
 
 **Date:** 10.06.2022
 
-## Link to the html page
+## Link
 
-https://66df50ab281d7375c3970db4--aquamarine-paletas-e6ffe2.netlify.app/
+you can view the html page for this project in this link: https://collegetuitionanalysis.netlify.app/
 
 ## Introduction
 
