@@ -4,6 +4,10 @@
 
 **Date:** 10.06.2022
 
+## Link to the html page
+
+https://66df50ab281d7375c3970db4--aquamarine-paletas-e6ffe2.netlify.app/
+
 ## Introduction
 
 This project was the final assignment for a Statistics and Data Analysis with R course at Tel Aviv University. It involved various phases of a data analysis project, including data importing, data tidying, understanding the data, visualizing data using ggplot2, modeling with tools such as hypothesis testing and regression, and communicating findings through a written report.
